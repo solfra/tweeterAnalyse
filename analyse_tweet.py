@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import csv
 import os
 import subprocess
+import copy
 
 direct = os.listdir('tweet/')
 lmois = []
@@ -22,22 +23,30 @@ for i in direct :
     v = i.split('_')
     m.append(v[4][4:6])
 
-print("nombre de mois pris en compte : ", len(lmois), "couvrant la periode du", direct[0].split('_')[4], "au", direct[-1].split('_')[4] )
+print("nombre de mois pris en compte : ", len(lmois), ", couvrant la periode du", direct[0].split('_')[4], "au", direct[-1].split('_')[4] )
 
 #def liste utiles******************************
 ldateTW = []
-ldate = []
+
+lTw = []
+
 l_impr = []
 l_engag = [] 
 l_rt = []
 l_eng_prct = []
-l_eng_prct_mois = []
 l_like = []
+l_clic_prof = []
+chastag =[]
+media=[]
+
 impr_moy_mois = []
 engag_moy_mois = []
+l_eng_prct_mois = []
 like_moy_mois = []
 rt_moy_mois = []
+
 total_tw = 0
+
 
 #parcours tout les mois***************************
 for mois in lmois :
@@ -52,7 +61,7 @@ for mois in lmois :
     rt = []
 
     for tweet in reversed(mois[1:]) : 
-        ldate.append(tweet[3])
+        lTw.append(tweet[2])
         l_impr.append(float(tweet[4]))
         impr.append(float(tweet[4]))
         l_engag.append(float(tweet[5]))
@@ -63,6 +72,11 @@ for mois in lmois :
         engag_prct.append(float(tweet[6]))
         l_like.append(float(tweet[9]))
         like.append(float(tweet[9]))
+        l_clic_prof.append(float(tweet[10]))
+
+        chastag.append(float(tweet[12]))
+        media.append(float(tweet[20])) #vue media
+
         
 
     impr_moy_mois.append(np.median(np.array(impr)))
@@ -72,13 +86,19 @@ for mois in lmois :
     like_moy_mois.append(np.median(np.array(like)))
 
 print("total des tweet pris en compte : ", total_tw)
+print()
 
 #transformatieon en array pour utiliser np******************************
+
 l_impr = np.array(l_impr)
 l_engag= np.array(l_engag)
 l_rt = np.array(l_rt)
 l_eng_prct = np.array(l_eng_prct)*100
 l_like = np.array(l_like)
+
+clic_prof = np.array(l_clic_prof)
+media = np.array(media)
+chastag = np.array(chastag)
 
 #print des indicateur*******************************
 #print("vue total : ", np.sum(l_impr), " ; engagement total : ", np.sum(l_engag)," ; ratio : ",np.sum(l_engag)/np.sum(l_impr) )
@@ -103,11 +123,19 @@ like_mean = np.mean(l_like)
 like_med= np.median(l_like)
 print("Nombre de like : moyenne :", like_mean, " ; médiane :", like_med)
 
-#******************************************
+print("Nombre de clic profil : moyenne :", np.mean(clic_prof), " ; médiane :", np.median(clic_prof))
 
-x = np.arange(len(ldate)) # pr fct tweet
+print("\nsuppose que media vue au moins une fois", "\nvue media moyen : ", media[media!=0].mean())
+
+print("\nsuppose que hastag cliqué au moins une fois", "\nclic hastag moyen : ", chastag[chastag!=0].mean())
+
+
+#******************************************
+x = np.arange(len(lTw)) # pr fct tweet
 
 x2 = np.arange(len(impr_moy_mois)) #pr fct mois
+
+
 
 #****************************************************
 plt.figure(figsize=(15,15))
@@ -164,3 +192,31 @@ plt.title("engagement en fonction de l'impression")
 plt.show()
 
 
+#****************************
+plt.figure(figsize=(15,15))
+plt.subplot(121)
+plt.hist(l_impr, bins = 15, density=False, log=True)
+plt.title("impression")
+
+plt.subplot(122)
+plt.hist(l_engag, bins = 15, density=False, log=True)
+plt.title("engagement")
+
+plt.show()
+
+#*************************
+plt.plot(l_like, l_engag, 'd', label ='like')
+plt.plot(l_rt, l_engag, "x",label = 'rt')
+plt.legend()
+plt.show()
+
+#********************************************
+# attention, modifie les liste. Ne plus leur faire confiance après
+impr=list(clic_prof/l_impr)
+print("\nlist des tweet avec le plus de clic profil : \n")
+
+for i in range(5):
+    tmax = impr.index(max(impr))
+    print("tweet numéros {} avec {} clics par impression :".format(i+1,max(impr)),lTw[tmax],"", sep="\n")
+    impr.pop(tmax)
+    lTw.pop(tmax)
